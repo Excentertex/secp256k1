@@ -4,41 +4,55 @@
 #include <stdlib.h>
 #include <gmp.h>
 
-#include "num_gmp.h"
+#include "num.h"
 
-namespace secp256k1 {
-
-class NumberState {
-private:
+typedef struct {
+    int initialized;
     gmp_randstate_t rng;
+} secp256k1_num_state_t;
 
-public:
-    NumberState() {
-        gmp_randinit_default(rng);
-    }
+static secp256k1_num_state_t secp256k1_num_state = {};
 
-    ~NumberState() {
-        gmp_randclear(rng);
-    }
-
-    void gen(mpz_t out, mpz_t size) {
-        mpz_urandomm(out, rng, size);
-    }
-};
-
-static NumberState number_state;
-
-Number::Number(const Number &x) {
-    mpz_init_set(bn, x.bn);
+void secp256k1_num_start(void) {
+    if (secp256k1_num_state.initialized)
+        return;
+    secp256k1_num_state.initialized = 1;
+    gmp_randinit_default(rng);
 }
 
-Number::Number() {
-    mpz_init(bn);
+void secp256k1_num_init(secp256k1_num_t *r) {
+    mpz_init(r->bn);
 }
 
-Number::~Number() {
-    mpz_clear(bn);
+void secp256k1_num_free(secp256k1_num_t *r) {
+    mpz_clear(r->bn);
 }
+
+void secp256k1_num_copy(secp256k1_num_t *r, const secp256k1_num_t *a) {
+    mpz_set(r->bn, a->bn);
+}
+
+void secp256k1_num_get_bin(unsigned char *r, unsigned int rlen, const secp256k1_num_t *a);
+void secp256k1_num_set_bin(secp256k1_num_t *r, unsigned char *a, unsigned int alen);
+void secp256k1_num_set_int(secp256k1_num_t *r, int a);
+void secp256k1_num_mod_inverse(secp256k1_num_t *r, const secp256k1_num_t *a, const secp256k1_num_t *m);
+void secp256k1_num_mod_mul(secp256k1_num_t *r, const secp256k1_num_t *a, const secp256k1_num_t *b, const secp256k1_num_t *m);
+int  secp256k1_num_cmp(const secp256k1_num_t *a, const secp256k1_num_t *b);
+void secp256k1_num_add(secp256k1_num_t *r, const secp256k1_t *a, const secp256k1_t *b);
+void secp256k1_num_sub(secp256k1_num_t *r, const secp256k1_t *a, const secp256k1_t *b);
+void secp256k1_num_mul(secp256k1_num_t *r, const secp256k1_t *a, const secp256k1_t *b);
+void secp256k1_num_div(secp256k1_num_t *r, const secp256k1_t *a, const secp256k1_t *b);
+void secp256k1_num_mod(secp256k1_num_t *r, const secp256k1_t *a, const secp256k1_t *b);
+int  secp256k1_num_bits(const secp256k1_num_t *a);
+int  secp256k1_num_shift(secp256k1_num_t *r, int bits);
+int  secp256k1_num_is_zero(const secp256k1_num_t *a);
+int  secp256k1_num_is_odd(const secp256k1_num_t *a);
+int  secp256k1_num_is_neg(const secp256k1_num_t *a);
+int  secp256k1_num_get_bit(const secp256k1_num_t *a, int pos);
+void secp256k1_num_inc(secp256k1_num_t *r);
+void secp256k1_num_set_hex(secp256k1_num_t *r, const unsigned char *a, int alen);
+void secp256k1_num_get_hex(unsigned char *r, int *rlen, const secp256k1_num_t *a);
+void secp256k1_num_split(secp256k1_num_t *rl, secp256k1_num_t *rh, const secp256k1_num_t *a);
 
 Number &Number::operator=(const Number &x) {
     mpz_set(bn, x.bn);
